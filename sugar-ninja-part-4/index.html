@@ -1,0 +1,1847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Ninja: Part 4 Reading Slice</title>
+    <script src="./assets/tailwind.js"></script>
+    <script src="./assets/tone.js"></script>
+    
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at center, #3e2723 0%, #1b0f0d 100%);
+            touch-action: none;
+        }
+        .font-game {
+            font-family: 'Arial Black', Arial, sans-serif;
+            letter-spacing: 0.05em;
+        }
+        .font-ninja {
+            font-family: 'Arial Black', Arial, sans-serif;
+            letter-spacing: 0.04em;
+        }
+        .font-reading {
+            font-family: Arial, sans-serif;
+        }
+        /* Classic Fruit Ninja 3D Arcade Outlined Text */
+        .fn-outline {
+            -webkit-text-stroke: 1.5px #1c0d06;
+            text-shadow: 0 3px 0 #1c0d06, 0 5px 8px rgba(0,0,0,0.6);
+        }
+        .fn-letter {
+            display: inline-block;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: clamp(2.8rem, 6vw, 4.6rem);
+            line-height: 1;
+            padding: 0 2px;
+            -webkit-text-stroke: 2.5px #1a0f0a;
+            filter: drop-shadow(0 6px 0 #1a0f0a) drop-shadow(0 10px 14px rgba(0,0,0,0.65));
+            position: relative;
+        }
+        .fn-s { background: linear-gradient(180deg, #d8b4fe 0%, #a855f7 45%, #6b21a8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; transform: rotate(-5deg); }
+        .fn-u { background: linear-gradient(180deg, #fca5a5 0%, #ef4444 45%, #991b1b 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; transform: rotate(2deg); }
+        .fn-g { background: linear-gradient(180deg, #fef08a 0%, #eab308 45%, #a16207 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; transform: rotate(-2deg); }
+        .fn-a { background: linear-gradient(180deg, #fdba74 0%, #f97316 45%, #9a3412 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; transform: rotate(3deg); }
+        .fn-r { background: linear-gradient(180deg, #bef264 0%, #65a30d 45%, #365314 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; transform: rotate(-3deg); }
+        .fn-ninja {
+            display: inline-block;
+            font-family: 'Shojumaru', 'Arial Black', Arial, sans-serif;
+            font-size: clamp(2.3rem, 5vw, 3.9rem);
+            line-height: 1;
+            background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 48%, #64748b 52%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 2.5px #0f172a;
+            filter: drop-shadow(0 6px 0 #0f172a) drop-shadow(0 10px 14px rgba(0,0,0,0.7));
+        }
+        /* Dojo wood plank texture effect */
+        .dojo-bg {
+            background-color: #2c1810;
+            background-image: 
+                repeating-linear-gradient(90deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 2px, transparent 2px, transparent 90px),
+                linear-gradient(180deg, rgba(255,180,100,0.06) 0%, rgba(0,0,0,0.5) 100%);
+        }
+        .game-btn {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 0 rgba(0,0,0,0.35), 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .game-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.35), 0 4px 10px rgba(0,0,0,0.3);
+        }
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        .animate-pulse-slow {
+            animation: pulseGlow 2.4s infinite ease-in-out;
+        }
+        /* Mobile dynamic viewport & safe-area support */
+        .app-viewport {
+            height: 100vh;
+            height: 100dvh;
+        }
+        /* Custom scrollbar for modals */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 8px;
+        }
+    button:focus-visible,input:focus-visible{outline:4px solid #facc15!important;outline-offset:3px}input,textarea{user-select:text!important;-webkit-user-select:text!important}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.fn-outline{-webkit-text-stroke:.4px #1c0d06}#roundBadge{-webkit-text-stroke:0;text-shadow:0 1px 2px black}</style>
+</head>
+<body class="dojo-bg w-screen app-viewport flex flex-col justify-between relative overflow-hidden text-white">
+
+    <header class="z-20 w-full px-2 sm:px-3 pt-1.5 sm:pt-2 pb-1 flex flex-col gap-1.5 sm:gap-2 pointer-events-none shrink-0">
+        <!-- Top Bar: Score, Question Progress, Lives, and Utility Buttons -->
+        <div class="max-w-6xl w-full mx-auto flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+            <!-- Score & Combo -->
+            <div class="flex items-center gap-1.5 sm:gap-2.5 bg-amber-950/90 border-2 border-amber-500/60 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl shadow-lg pointer-events-auto">
+                <div class="text-xl sm:text-2xl md:text-3xl">🍉</div>
+                <div>
+                    <div class="text-[9px] sm:text-[10px] uppercase tracking-wider text-amber-300 font-bold leading-none">Score</div>
+                    <div id="scoreDisplay" class="font-game fn-outline text-lg sm:text-2xl md:text-3xl text-yellow-400 leading-none">0</div>
+                </div>
+                <div id="comboBadge" class="hidden ml-1 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-game fn-outline text-[11px] sm:text-xs px-2 py-0.5 rounded-full shadow">
+                    2x!
+                </div>
+            </div>
+
+            <!-- Mini Fruit Ninja Brand Header -->
+            <div class="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-2xl bg-black/35 border border-amber-500/30">
+                <span class="font-game fn-outline text-xl tracking-wider text-orange-400">SUGAR</span>
+                <span class="font-ninja text-lg text-slate-200 drop-shadow">NINJA</span>
+            </div>
+
+            <!-- Question Counter & Lives -->
+            <div class="flex items-center gap-1.5 sm:gap-2 bg-stone-900/90 border-2 border-stone-600/70 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl shadow-lg pointer-events-auto">
+                <span id="roundBadge" class="font-game fn-outline text-xs sm:text-base md:text-lg text-emerald-400">Q1/10</span>
+                <span class="text-stone-500 text-xs">|</span>
+                <span id="livesDisplay" class="text-sm sm:text-lg md:text-xl tracking-tight sm:tracking-widest" title="Lives">❤️❤️❤️</span>
+            </div>
+
+            <!-- Action Controls (Compact icons on mobile, labeled on larger screens) -->
+            <div class="flex items-center gap-1 sm:gap-1.5 pointer-events-auto">
+                <button id="btnToggleTrans" class="game-btn bg-emerald-600 hover:bg-emerald-500 border-2 border-emerald-300 text-white font-game font-bold px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm flex items-center gap-1" title="Toggle Bahasa Melayu Translation">
+                    <span>🌐</span> <span id="transLabel">BM</span>
+                </button>
+                <button id="btnToggleTexts" class="game-btn bg-sky-600 hover:bg-sky-500 border-2 border-sky-300 text-white font-game font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm flex items-center gap-1" title="Read Texts (A, B, C)">
+                    <span>📖</span> <span class="hidden md:inline">Read Texts</span><span class="md:hidden">Texts</span>
+                </button>
+                <button style="display:none" id="btnSheetSetup" class="game-btn bg-teal-700 hover:bg-teal-600 border-2 border-teal-300 text-white font-game font-bold px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm flex items-center gap-1" title="Connect Google Sheet & View Scores">
+                    <span>📊</span> <span id="sheetStatusDot" class="w-2 h-2 rounded-full bg-amber-300"></span> <span class="hidden lg:inline">Sheet</span>
+                </button>
+                <button id="btnSlowMo" class="game-btn bg-purple-600 hover:bg-purple-500 border-2 border-purple-300 text-white font-game font-bold px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm flex items-center gap-1" title="Toggle Slow Motion">
+                    <span>🐢</span> <span id="slowMoLabel" class="hidden sm:inline">Normal</span>
+                </button>
+                <button id="btnMusic" class="game-btn bg-pink-600 hover:bg-pink-500 border-2 border-pink-300 text-white font-game font-bold px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm flex items-center gap-1" title="Toggle Dojo Background Music">
+                    <span>🎵</span> <span id="musicLabel" class="hidden lg:inline">Music: ON</span>
+                </button>
+                <button id="btnSound" class="game-btn bg-amber-700 hover:bg-amber-600 border-2 border-amber-400 text-white font-game font-bold px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm" title="Toggle Slash & SFX">
+                    🔊
+                </button>
+            </div>
+        </div>
+
+        <!-- Active Question Banner -->
+        <div id="questionBanner" class="max-w-4xl w-full mx-auto bg-gradient-to-b from-amber-100 to-amber-50 text-stone-900 border-2 sm:border-4 border-amber-600 rounded-xl sm:rounded-2xl px-2.5 sm:px-4 py-1.5 sm:py-2 shadow-xl transition-all duration-300 pointer-events-auto">
+            <div class="flex items-center justify-between gap-1.5 mb-0.5">
+                <span id="qNumberTag" class="bg-amber-700 text-amber-100 font-game text-[11px] sm:text-sm md:text-base px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+                    Question 0
+                </span>
+                <span class="text-[10px] sm:text-xs font-semibold text-amber-900/85 truncate">
+                    🗡️ Slice <strong class="text-rose-600">A: Penny</strong>, <strong class="text-blue-600">B: Bart</strong>, or <strong class="text-emerald-600">C: Minnie</strong>!
+                </span>
+            </div>
+            <p id="qTextDisplay" class="font-reading text-sm sm:text-lg md:text-2xl font-bold text-stone-900 leading-snug text-center py-0.5">
+                "She learned about hidden sugar from a television programme."
+            </p>
+            <p id="qTransDisplay" class="bm-trans text-[11px] sm:text-sm md:text-base font-semibold text-amber-800 italic text-center leading-tight">
+                (Dia mengetahui tentang gula tersembunyi daripada sebuah rancangan televisyen.)
+            </p>
+        </div>
+    </header>
+
+    <main class="relative flex-1 w-full h-full overflow-hidden min-h-0">
+        <canvas id="ninjaCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+        <!-- Synonym Detective Evidence Toast (Appears when sliced!) -->
+        <div id="evidenceToast" class="hidden absolute inset-x-2.5 sm:inset-x-4 top-2 sm:top-5 max-w-2xl mx-auto z-30 bg-emerald-950/95 border-2 sm:border-4 border-emerald-400 text-white rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-2xl backdrop-blur-md transition-all max-h-[85%] overflow-y-auto">
+            <div class="flex items-start gap-2.5 sm:gap-3">
+                <div id="toastIcon" class="text-3xl sm:text-4xl md:text-5xl shrink-0">🎯</div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center justify-between gap-1">
+                        <h3 id="toastTitle" class="font-game text-lg sm:text-xl md:text-2xl font-bold text-emerald-300 leading-tight">SLASH! Correct Match: A (Penny)</h3>
+                        <span class="text-[10px] sm:text-xs uppercase font-bold bg-emerald-700/80 px-2 py-0.5 rounded-full text-emerald-100">Synonym Detective</span>
+                    </div>
+                    <p id="toastClue" class="text-xs sm:text-sm md:text-base text-emerald-100 mt-1 font-medium leading-snug"></p>
+                    <p id="toastClueBM" class="bm-trans text-[11px] sm:text-xs md:text-sm text-emerald-300/90 italic mt-0.5 leading-snug"></p>
+                    <div class="mt-2 bg-black/40 border-l-4 border-yellow-400 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-r-xl">
+                        <div id="toastQuote" class="text-[11px] sm:text-xs md:text-sm text-amber-200 italic leading-snug"></div>
+                        <div id="toastQuoteBM" class="bm-trans text-[10px] sm:text-xs text-amber-300/80 italic mt-1 leading-snug"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-2.5 sm:mt-3 flex justify-end">
+                <button id="btnNextQuestion" class="game-btn w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-game font-bold px-5 py-2 sm:py-2.5 rounded-xl text-base sm:text-lg text-center">
+                    Next Question ➡️
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Character Legend Bar (Tap to open Texts Modal on mobile!) -->
+    <footer class="z-20 w-full px-2 sm:px-3 pb-1.5 sm:pb-2 pt-0.5 shrink-0">
+        <div id="footerCards" class="max-w-5xl mx-auto grid grid-cols-3 gap-1.5 sm:gap-3 text-xs cursor-pointer" title="Tap to read full texts">
+            <!-- Card A -->
+            <div class="bg-rose-950/90 border sm:border-2 border-rose-500/70 rounded-xl px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1.5 sm:gap-2 shadow">
+                <span class="w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-rose-500 text-white font-game font-bold flex items-center justify-center text-xs sm:text-sm shrink-0">A</span>
+                <div class="truncate">
+                    <div class="font-game font-bold text-rose-200 text-xs sm:text-sm leading-tight">Penny 🍎</div>
+                    <div class="text-[9px] sm:text-[11px] text-rose-300/90 truncate">TV doc • Adverts • Labels</div>
+                </div>
+            </div>
+            <!-- Card B -->
+            <div class="bg-blue-950/90 border sm:border-2 border-blue-500/70 rounded-xl px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1.5 sm:gap-2 shadow">
+                <span class="w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-blue-500 text-white font-game font-bold flex items-center justify-center text-xs sm:text-sm shrink-0">B</span>
+                <div class="truncate">
+                    <div class="font-game font-bold text-blue-200 text-xs sm:text-sm leading-tight">Bart 🍊</div>
+                    <div class="text-[9px] sm:text-[11px] text-blue-300/90 truncate">Media scares • Energy</div>
+                </div>
+            </div>
+            <!-- Card C -->
+            <div class="bg-emerald-950/90 border sm:border-2 border-emerald-500/70 rounded-xl px-2 sm:px-3 py-1 sm:py-1.5 flex items-center gap-1.5 sm:gap-2 shadow">
+                <span class="w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-emerald-500 text-white font-game font-bold flex items-center justify-center text-xs sm:text-sm shrink-0">C</span>
+                <div class="truncate">
+                    <div class="font-game font-bold text-emerald-200 text-xs sm:text-sm leading-tight">Minnie 🥝</div>
+                    <div class="text-[9px] sm:text-[11px] text-emerald-300/90 truncate">7 tsp cola • Barcode app</div>
+                </div>
+            </div>
+        </div>
+    <p style="text-align:center;font-size:12px;margin-top:5px;color:#fde68a">© 2026 Mr Z · The English Lab</p></footer>
+
+    <!-- START SCREEN OVERLAY -->
+    <div id="startModal" class="fixed inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-4">
+        <div class="max-w-3xl w-full bg-gradient-to-b from-amber-900 to-stone-900 border-2 sm:border-4 border-amber-500 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-2xl text-center max-h-[94dvh] overflow-y-auto">
+            <div class="inline-flex items-center gap-1.5 bg-amber-500/20 border border-amber-400/50 text-amber-300 px-3 py-0.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-1">
+                🗡️ Part 4 Multiple-Matching Arcade
+            </div>
+            <div class="relative flex flex-col items-center justify-center my-0.5 select-none">
+                <div class="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1">
+                    <!-- Juicy Multi-Colored SUGAR Word -->
+                    <div class="inline-flex items-baseline">
+                        <span class="fn-letter fn-s">S</span>
+                        <span class="fn-letter fn-u">U</span>
+                        <span class="fn-letter fn-g">G</span>
+                        <span class="relative inline-block">
+                            <!-- Classic Fruit Ninja Green Leaves on top of letter A -->
+                            <svg class="w-7 h-7 sm:w-10 sm:h-10 absolute -top-4 sm:-top-6 left-1/2 -translate-x-1/2 z-10 drop-shadow-md" viewBox="0 0 64 64" fill="none">
+                                <path d="M32 54 C14 48 8 26 20 12 C30 22 34 36 32 54 Z" fill="#84cc16" stroke="#1a2e05" stroke-width="4" stroke-linejoin="round"/>
+                                <path d="M32 54 C50 48 56 26 44 14 C34 24 30 36 32 54 Z" fill="#4d7c0f" stroke="#1a2e05" stroke-width="4" stroke-linejoin="round"/>
+                            </svg>
+                            <span class="fn-letter fn-a">A</span>
+                        </span>
+                        <span class="fn-letter fn-r">R</span>
+                    </div>
+                    <!-- Metallic Sharp Silver NINJA Word -->
+                    <span class="fn-ninja">NINJA</span>
+                </div>
+                <!-- Glowing Katana Slash Divider -->
+                <div class="w-48 sm:w-80 h-1 sm:h-1.5 bg-gradient-to-r from-transparent via-amber-200 to-red-500 rounded-full shadow-[0_0_12px_#f97316] -mt-1 mb-1 transform -rotate-1"></div>
+                <div class="font-game fn-outline text-sm sm:text-xl text-yellow-300 tracking-widest uppercase">
+                    🍉 Reading Slice Edition 🗡️
+                </div>
+            </div>
+            <p class="text-amber-100/90 text-xs sm:text-sm md:text-base mt-1 max-w-xl mx-auto leading-snug">
+                Read about <strong>Penny (A)</strong>, <strong>Bart (B)</strong>, and <strong>Minnie (C)</strong>. Swipe or tap the flying fruit carrying the correct person! Keyboard: press A, B or C while that fruit is visible.
+            </p>
+
+            <!-- Mobile Character Tabs (Visible on phones so users don't have to scroll a huge wall of text) -->
+            <div class="flex md:hidden justify-center gap-2 mt-3 mb-2">
+                <button type="button" data-tab="A" class="start-tab-btn flex-1 py-1.5 px-2 rounded-xl font-game text-sm bg-rose-600 text-white border-2 border-white shadow">
+                    A: Penny 🍎
+                </button>
+                <button type="button" data-tab="B" class="start-tab-btn flex-1 py-1.5 px-2 rounded-xl font-game text-sm bg-blue-950/80 text-blue-200 border-2 border-blue-500/50">
+                    B: Bart 🍊
+                </button>
+                <button type="button" data-tab="C" class="start-tab-btn flex-1 py-1.5 px-2 rounded-xl font-game text-sm bg-emerald-950/80 text-emerald-200 border-2 border-emerald-500/50">
+                    C: Minnie 🥝
+                </button>
+            </div>
+
+            <!-- The 3 Original Reading Texts (Tabbed on mobile, 3-column grid on tablet/desktop) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3 text-left my-2 sm:my-4">
+                <div id="startCardA" class="start-text-card bg-rose-950/75 border-2 border-rose-500/70 rounded-2xl p-3 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-rose-500 text-white font-game font-bold flex items-center justify-center text-sm">A</span>
+                            <h3 class="font-game font-bold text-base sm:text-lg text-rose-200">Penny 🍎</h3>
+                        </div>
+                        <p class="text-xs leading-relaxed text-rose-100/95">
+                            Penny watched a documentary about healthy eating and was shocked by the amount of sugar in bread and soup. She blames advertisers for making unhealthy food look so delicious. Penny believes it is very difficult to know how much sugar is added because food labels are too hard to understand.
+                        </p>
+                    </div>
+                    <div class="bm-trans mt-2 pt-1.5 border-t border-rose-500/40 text-[11px] leading-relaxed text-amber-200/90 italic">
+                        <strong>BM:</strong> Penny menonton sebuah dokumentari tentang pemakanan sihat dan terkejut dengan jumlah gula di dalam roti dan sup. Dia menyalahkan pengiklan kerana membuatkan makanan tidak sihat kelihatan begitu sedap. Penny percaya amat sukar untuk mengetahui berapa banyak gula ditambah kerana label makanan terlalu sukar untuk difahami.
+                    </div>
+                </div>
+
+                <div id="startCardB" class="start-text-card hidden md:flex bg-blue-950/75 border-2 border-blue-500/70 rounded-2xl p-3 flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-500 text-white font-game font-bold flex items-center justify-center text-sm">B</span>
+                            <h3 class="font-game font-bold text-base sm:text-lg text-blue-200">Bart 🍊</h3>
+                        </div>
+                        <p class="text-xs leading-relaxed text-blue-100/95">
+                            Bart thinks the media always tries to scare people about different kinds of food. He believes people are clever enough to make their own choices. In his opinion, a small amount of sugar can give us energy when we are tired, and it is healthy to eat a wide variety of food groups instead of cutting items out completely.
+                        </p>
+                    </div>
+                    <div class="bm-trans mt-2 pt-1.5 border-t border-blue-500/40 text-[11px] leading-relaxed text-amber-200/90 italic">
+                        <strong>BM:</strong> Bart berpendapat pihak media sentiasa cuba menakutkan orang ramai tentang pelbagai jenis makanan. Dia percaya orang ramai cukup bijak untuk membuat pilihan sendiri. Pada pendapatnya, sedikit gula boleh memberi kita tenaga apabila penat, dan adalah sihat untuk makan pelbagai kumpulan makanan daripada meninggalkan terus sesuatu makanan.
+                    </div>
+                </div>
+
+                <div id="startCardC" class="start-text-card hidden md:flex bg-emerald-950/75 border-2 border-emerald-500/70 rounded-2xl p-3 flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-500 text-white font-game font-bold flex items-center justify-center text-sm">C</span>
+                            <h3 class="font-game font-bold text-base sm:text-lg text-emerald-200">Minnie 🥝</h3>
+                        </div>
+                        <p class="text-xs leading-relaxed text-emerald-100/95">
+                            Minnie was worried when she discovered that one can of fizzy cola has seven teaspoons of sugar. Her mother is also concerned about eating too much sweet food. Minnie now uses an app on her phone to scan the barcodes on items, which helps her family check exactly how much sugar is inside before they buy anything.
+                        </p>
+                    </div>
+                    <div class="bm-trans mt-2 pt-1.5 border-t border-emerald-500/40 text-[11px] leading-relaxed text-amber-200/90 italic">
+                        <strong>BM:</strong> Minnie berasa bimbang apabila mendapati satu tin kola bergas mempunyai tujuh sudu teh gula. Ibunya juga bimbang tentang pengambilan terlalu banyak makanan manis. Minnie kini menggunakan aplikasi pada telefonnya untuk mengimbas kod bar pada barangan, yang membantu keluarganya menyemak jumlah sebenar gula di dalamnya sebelum membeli apa-apa.
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-black/45 border-2 border-amber-500/60 rounded-2xl p-2.5 sm:p-3.5 mb-2.5 sm:mb-3.5 max-w-xl mx-auto text-left">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <span class="font-game text-xs sm:text-sm text-amber-300 tracking-wide">📝 PUPIL DETAILS (FOR GOOGLE SHEET MARKS)</span>
+                    <button type="button" style="display:none" id="btnOpenSheetFromStart" class="text-[11px] sm:text-xs font-bold text-teal-300 hover:text-teal-200 underline flex items-center gap-1">
+                        ⚙️ Teacher Sheet Setup
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div class="sm:col-span-2">
+                        <input id="studentNameInput" type="text" placeholder="Enter Pupil Name (e.g., Ahmad Albab)" class="w-full bg-stone-900/90 border-2 border-amber-500/50 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs sm:text-sm text-white placeholder-stone-400 outline-none font-semibold" />
+                    </div>
+                    <div>
+                        <input id="studentClassInput" type="text" placeholder="Class (e.g., 6 Bestari)" class="w-full bg-stone-900/90 border-2 border-amber-500/50 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs sm:text-sm text-white placeholder-stone-400 outline-none font-semibold" />
+                    </div>
+                </div>
+                <p id="nameErrorMsg" class="hidden text-rose-400 text-[11px] font-bold mt-1.5">⚠️ Please enter your name before starting so your marks can be recorded!</p>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[11px] sm:text-xs text-amber-200 mb-3 sm:mb-4 bg-black/30 py-2 px-3 rounded-xl">
+                <span>✅ <strong>Correct:</strong> +100 pts</span>
+                <span>•</span>
+                <span>❌ <strong>Wrong:</strong> -1 ❤️</span>
+                <span>•</span>
+                <span>💣 <strong>Avoid Bombs!</strong></span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-center gap-2.5 sm:gap-3">
+                <button id="btnStartGame" class="game-btn animate-pulse-slow bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 border-2 border-emerald-200 text-white font-game text-lg sm:text-2xl font-bold px-6 py-3 rounded-2xl w-full sm:w-auto">
+                    ⚔️ Start Slicing! (10 Qs)
+                </button>
+                <button id="btnStartBonus" class="game-btn bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 border-2 border-amber-200 text-white font-game text-base sm:text-lg font-bold px-5 py-2.5 sm:py-3 rounded-2xl w-full sm:w-auto">
+                    🔥 Endless Synonym Rush
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- READING PASSAGES POPUP MODAL (Accessible anytime during gameplay) -->
+    <div id="textsModal" class="hidden fixed inset-0 z-40 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="max-w-3xl w-full bg-stone-900 border-4 border-sky-500 rounded-3xl p-5 md:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-game text-2xl font-bold text-sky-300">📖 Part 4 Reading Texts &amp; Translation (Paused)</h2>
+                <button id="btnCloseTexts" class="game-btn bg-rose-600 hover:bg-rose-500 text-white font-game font-bold px-4 py-1.5 rounded-xl text-sm">
+                    ✖ Resume Game
+                </button>
+            </div>
+            <div class="space-y-3 text-sm leading-relaxed">
+                <div class="p-4 rounded-2xl bg-rose-950/80 border-2 border-rose-500">
+                    <div class="font-game font-bold text-rose-300 text-base mb-1">A — Penny 🍎</div>
+                    <p class="text-rose-100">Penny watched a <u class="decoration-yellow-400 decoration-2">documentary</u> about healthy eating and was shocked by the amount of sugar in bread and soup. She <u class="decoration-yellow-400 decoration-2">blames advertisers</u> for making <u class="decoration-yellow-400 decoration-2">unhealthy food</u> look so delicious. Penny believes it is very difficult to know how much sugar is added because <u class="decoration-yellow-400 decoration-2">food labels are too hard to understand</u>.</p>
+                    <p class="bm-trans mt-2 pt-2 border-t border-rose-500/40 text-xs text-amber-200 italic">
+                        <strong>Terjemahan BM:</strong> Penny menonton sebuah <u class="decoration-yellow-400">dokumentari</u> tentang pemakanan sihat dan terkejut dengan jumlah gula di dalam roti dan sup. Dia <u class="decoration-yellow-400">menyalahkan pengiklan</u> kerana membuatkan <u class="decoration-yellow-400">makanan tidak sihat</u> kelihatan begitu sedap. Penny percaya amat sukar untuk mengetahui berapa banyak gula ditambah kerana <u class="decoration-yellow-400">label makanan terlalu sukar untuk difahami</u>.
+                    </p>
+                </div>
+                <div class="p-4 rounded-2xl bg-blue-950/80 border-2 border-blue-500">
+                    <div class="font-game font-bold text-blue-300 text-base mb-1">B — Bart 🍊</div>
+                    <p class="text-blue-100">Bart thinks <u class="decoration-yellow-400 decoration-2">the media always tries to scare people</u> about different kinds of food. He believes people are clever enough to make their own choices. In his opinion, <u class="decoration-yellow-400 decoration-2">a small amount of sugar can give us energy</u> when we are tired, and it is healthy to eat a wide variety of food groups instead of cutting items out completely.</p>
+                    <p class="bm-trans mt-2 pt-2 border-t border-blue-500/40 text-xs text-amber-200 italic">
+                        <strong>Terjemahan BM:</strong> Bart berpendapat <u class="decoration-yellow-400">pihak media sentiasa cuba menakutkan orang ramai</u> tentang pelbagai jenis makanan. Dia percaya orang ramai cukup bijak untuk membuat pilihan sendiri. Pada pendapatnya, <u class="decoration-yellow-400">sedikit gula boleh memberi kita tenaga</u> apabila kita penat, dan adalah sihat untuk makan pelbagai kumpulan makanan daripada meninggalkan terus sesuatu makanan.
+                    </p>
+                </div>
+                <div class="p-4 rounded-2xl bg-emerald-950/80 border-2 border-emerald-500">
+                    <div class="font-game font-bold text-emerald-300 text-base mb-1">C — Minnie 🥝</div>
+                    <p class="text-emerald-100">Minnie was worried when she discovered that one can of fizzy cola has seven teaspoons of sugar. Her mother is also concerned about eating too much sweet food. Minnie now <u class="decoration-yellow-400 decoration-2">uses an app on her phone to scan the barcodes on items</u>, which <u class="decoration-yellow-400 decoration-2">helps her family check</u> exactly <u class="decoration-yellow-400 decoration-2">how much sugar is inside before they buy anything</u>.</p>
+                    <p class="bm-trans mt-2 pt-2 border-t border-emerald-500/40 text-xs text-amber-200 italic">
+                        <strong>Terjemahan BM:</strong> Minnie berasa bimbang apabila mendapati satu tin kola bergas mempunyai tujuh sudu teh gula. Ibunya juga bimbang tentang pengambilan terlalu banyak makanan manis. Minnie kini <u class="decoration-yellow-400">menggunakan aplikasi pada telefonnya untuk mengimbas kod bar pada barangan</u>, yang <u class="decoration-yellow-400">membantu keluarganya menyemak</u> dengan tepat <u class="decoration-yellow-400">berapa banyak gula di dalamnya sebelum mereka membeli apa-apa</u>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME OVER / VICTORY MODAL -->
+    <div id="endModal" class="hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="max-w-3xl w-full bg-gradient-to-b from-stone-900 to-amber-950 border-4 border-amber-400 rounded-3xl p-5 md:p-7 shadow-2xl text-center max-h-[92vh] overflow-y-auto">
+            <div id="endEmoji" class="text-5xl mb-1">🏆</div>
+            <h2 id="endTitle" class="font-game text-3xl md:text-4xl font-bold text-yellow-300">Dojo Master!</h2>
+            <p id="endSubtitle" class="text-amber-200 text-sm md:text-base mt-1">You sliced through Part 4 Reading Comprehension!</p>
+
+            <div class="flex justify-center gap-6 my-4 bg-black/40 p-3 rounded-2xl max-w-md mx-auto border border-amber-500/40">
+                <div>
+                    <div class="text-xs uppercase text-amber-300 font-bold">Marks</div>
+                    <div id="finalMarks" class="font-game text-3xl font-bold text-sky-400">10/10</div>
+                </div>
+                <div class="border-r border-amber-500/30"></div>
+                <div>
+                    <div class="text-xs uppercase text-amber-300 font-bold">Final Score</div>
+                    <div id="finalScore" class="font-game text-3xl font-bold text-yellow-400">700</div>
+                </div>
+                <div class="border-r border-amber-500/30"></div>
+                <div>
+                    <div class="text-xs uppercase text-amber-300 font-bold">Accuracy</div>
+                    <div id="finalAccuracy" class="font-game text-3xl font-bold text-emerald-400">100%</div>
+                </div>
+            </div>
+
+            <!-- Google Sheet Recording Status Banner -->
+            <div id="sheetSyncBanner" class="max-w-lg mx-auto mb-4 px-4 py-2.5 rounded-xl bg-teal-950/90 border-2 border-teal-400 text-xs sm:text-sm font-semibold text-teal-100 flex items-center justify-between gap-2">
+                <span id="sheetSyncText">📊 Saving marks to Google Sheet...</span>
+                <button type="button" id="btnRetrySync" class="hidden bg-teal-600 hover:bg-teal-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold">Retry</button>
+            </div>
+
+            <!-- Review Table -->
+            <div class="text-left bg-black/35 rounded-2xl p-3.5 border border-stone-700 mb-5 max-h-60 overflow-y-auto">
+                <div class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-2">🔑 Part 4 Answer Key &amp; Synonym Review</div>
+                <div id="reviewList" class="space-y-2 text-xs"></div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-3">
+                <button id="btnPlayAgain" class="game-btn bg-gradient-to-r from-emerald-500 to-green-600 text-white font-game font-bold px-6 py-3 rounded-2xl text-lg">
+                    🔄 Play Again (10 Questions)
+                </button>
+                <button id="btnPlayEndlessEnd" class="game-btn bg-gradient-to-r from-amber-500 to-orange-600 text-white font-game font-bold px-6 py-3 rounded-2xl text-lg">
+                    🔥 Play Endless Synonym Rush
+                </button>
+                <button id="btnOpenSheetEnd" class="game-btn bg-teal-700 hover:bg-teal-600 text-white font-game font-bold px-5 py-3 rounded-2xl text-base">
+                    📊 View / Export Marks
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sheetModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+        <div class="max-w-3xl w-full bg-stone-900 border-4 border-teal-500 rounded-3xl p-4 sm:p-6 shadow-2xl max-h-[92dvh] overflow-y-auto text-left">
+            <div class="flex items-center justify-between gap-2 mb-3">
+                <h2 class="font-game text-xl sm:text-2xl font-bold text-teal-300">📊 Google Sheet Auto-Recording Setup</h2>
+                <button id="btnCloseSheetModal" class="game-btn bg-rose-600 hover:bg-rose-500 text-white font-game font-bold px-3.5 py-1.5 rounded-xl text-xs sm:text-sm">
+                    ✖ Close
+                </button>
+            </div>
+
+            <!-- Web App URL Input -->
+            <div class="bg-black/40 border border-teal-500/40 rounded-2xl p-3.5 mb-4">
+                <label class="block text-xs sm:text-sm font-bold text-teal-200 mb-1">
+                    🔗 Paste Your Google Apps Script Web App URL:
+                </label>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input id="sheetWebhookInput" type="url" placeholder="https://script.google.com/macros/s/XXXX.../exec" class="flex-1 bg-stone-950 border-2 border-teal-600 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs sm:text-sm text-white outline-none" />
+                    <button id="btnSaveWebhook" class="game-btn bg-emerald-600 hover:bg-emerald-500 text-white font-game px-4 py-2 rounded-xl text-sm shrink-0">
+                        💾 Save &amp; Test Connection
+                    </button>
+                </div>
+                <p id="webhookSaveStatus" class="text-xs text-amber-300 mt-1.5">
+                    💡 Once connected, every time a pupil answers a question or finishes a game, their Name, Class, Marks (out of 10), Score, Accuracy, and Q1–Q10 breakdown are recorded straight into your Google Sheet!
+                </p>
+            </div>
+
+            <!-- 3-Step Setup Instructions + Copyable Script -->
+            <div class="bg-stone-950/80 border border-stone-700 rounded-2xl p-3.5 mb-4 text-xs sm:text-sm space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-amber-300">🛠️ How to connect your Google Sheet (Takes 1 minute):</span>
+                    <button id="btnCopyAppsScript" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-3 py-1 rounded-lg text-xs">
+                        📋 Copy Apps Script Code
+                    </button>
+                </div>
+                <ol class="list-decimal list-inside space-y-1 text-stone-300 text-xs leading-relaxed">
+                    <li>Open a new <strong>Google Sheet</strong>, click <strong>Extensions &rarr; Apps Script</strong>.</li>
+                    <li>Delete any code inside, paste the copied script below, and click <strong>Save (💾)</strong>.</li>
+                    <li>Click <strong>Deploy &rarr; New deployment</strong>, choose type <strong>Web app</strong>, set <em>"Who has access"</em> to <strong>Anyone</strong>, click <strong>Deploy</strong>, and paste the <strong>Web app URL</strong> above!</li>
+                </ol>
+                <pre id="appsScriptCodeBlock" class="bg-black/80 text-emerald-300 p-2.5 rounded-xl text-[11px] overflow-x-auto border border-stone-800 select-all">function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["Timestamp", "Event", "Pupil Name", "Class", "Marks (/10)", "Score", "Accuracy", "Current Q", "Selected", "Correct?", "Q1-Q10 Details"]);
+  }
+  var data = JSON.parse(e.postData.contents);
+  sheet.appendRow([
+    new Date(),
+    data.eventType || "FINAL_SCORE",
+    data.studentName || "Anonymous",
+    data.studentClass || "-",
+    data.marks + " / " + data.totalQuestions,
+    data.score,
+    data.accuracy + "%",
+    data.currentQuestion || "All Completed",
+    data.chosenAnswer || "-",
+    data.isCorrect !== undefined ? (data.isCorrect ? "CORRECT" : "WRONG") : "-",
+    data.details || ""
+  ]);
+  return ContentService.createTextOutput(JSON.stringify({status: "success"})).setMimeType(ContentService.MimeType.JSON);
+}</pre>
+            </div>
+
+            <!-- In-Session Recorded Marks Table + CSV Download -->
+            <div class="bg-black/40 border border-stone-700 rounded-2xl p-3.5">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <span class="font-bold text-xs sm:text-sm text-sky-300">📋 Session Marks Log (<span id="sessionCountBadge">0</span> records)</span>
+                    <button id="btnDownloadCSV" class="bg-sky-600 hover:bg-sky-500 text-white font-bold px-3 py-1 rounded-lg text-xs">
+                        ⬇️ Download Marks (.CSV for Excel / Sheets)
+                    </button>
+                </div>
+                <div id="sessionLogList" class="max-h-36 overflow-y-auto text-xs space-y-1.5 text-stone-300">
+                    <div class="text-stone-500 italic">No pupil attempts recorded in this session yet.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Teacher can paste their Google Apps Script Web App URL here OR inside the in-game "📊 Sheet" modal:
+        let googleSheetWebhookUrl = "";
+        let currentStudentName = "";
+        let currentStudentClass = "";
+        let questionFirstAttemptCorrect = {};
+        let questionAttemptLog = [];
+        let sessionResultsHistory = [];
+
+        const EXAM_QUESTIONS = [
+            {
+                qNum: "Question 0 (Example)",
+                statement: "She learned about hidden sugar from a television programme.",
+                statementBM: "Dia mengetahui tentang gula tersembunyi daripada sebuah rancangan televisyen.",
+                answer: "A",
+                person: "Penny",
+                synonymClue: "“television programme” = “a documentary”",
+                synonymClueBM: "“rancangan televisyen” = “sebuah dokumentari”",
+                quote: "“Penny watched a documentary about healthy eating and was shocked by the amount of sugar in bread and soup.”",
+                quoteBM: "“Penny menonton sebuah dokumentari tentang pemakanan sihat dan terkejut dengan jumlah gula di dalam roti dan sup.”"
+            },
+            {
+                qNum: "Question 15",
+                statement: "He feels the news tries to make people afraid about what they eat.",
+                statementBM: "Dia berpendapat berita cuba membuatkan orang ramai takut tentang apa yang mereka makan.",
+                answer: "B",
+                person: "Bart",
+                synonymClue: "“the news” = “the media” | “make people afraid” = “scare people”",
+                synonymClueBM: "“berita” = “pihak media” | “membuat orang takut” = “menakutkan orang ramai”",
+                quote: "“Bart thinks the media always tries to scare people about different kinds of food.”",
+                quoteBM: "“Bart berpendapat pihak media sentiasa cuba menakutkan orang ramai tentang pelbagai jenis makanan.”"
+            },
+            {
+                qNum: "Question 16",
+                statement: "She scans items with a smartphone to see their sugar content.",
+                statementBM: "Dia mengimbas barangan dengan telefon pintar untuk melihat kandungan gulanya.",
+                answer: "C",
+                person: "Minnie",
+                synonymClue: "“scans items with a smartphone” = “uses an app on her phone to scan the barcodes”",
+                synonymClueBM: "“mengimbas barangan dengan telefon pintar” = “menggunakan aplikasi pada telefonnya untuk mengimbas kod bar”",
+                quote: "“Minnie now uses an app on her phone to scan the barcodes on items, which helps her family check exactly how much sugar is inside...”",
+                quoteBM: "“Minnie kini menggunakan aplikasi pada telefonnya untuk mengimbas kod bar pada barangan, yang membantu keluarganya menyemak berapa banyak gula di dalamnya...”"
+            },
+            {
+                qNum: "Question 17",
+                statement: "She thinks it is difficult to read the details on food boxes.",
+                statementBM: "Dia berpendapat adalah sukar untuk membaca maklumat pada bungkusan makanan.",
+                answer: "A",
+                person: "Penny",
+                synonymClue: "“difficult to read the details on food boxes” = “food labels are too hard to understand”",
+                synonymClueBM: "“sukar membaca maklumat pada kotak makanan” = “label makanan terlalu sukar untuk difahami”",
+                quote: "“Penny believes it is very difficult to know how much sugar is added because food labels are too hard to understand.”",
+                quoteBM: "“Penny percaya amat sukar untuk mengetahui berapa banyak gula ditambah kerana label makanan terlalu sukar untuk difahami.”"
+            },
+            {
+                qNum: "Question 18",
+                statement: "He believes a little sweet food can give someone more energy.",
+                statementBM: "Dia percaya sedikit makanan manis boleh memberikan seseorang lebih tenaga.",
+                answer: "B",
+                person: "Bart",
+                synonymClue: "“a little sweet food” = “a small amount of sugar” | “give someone more energy” = “give us energy”",
+                synonymClueBM: "“sedikit makanan manis” = “sedikit gula” | “memberi lebih tenaga” = “memberi kita tenaga”",
+                quote: "“In his opinion, a small amount of sugar can give us energy when we are tired...”",
+                quoteBM: "“Pada pendapatnya, sedikit gula boleh memberi kita tenaga apabila kita penat...”"
+            },
+            {
+                qNum: "Question 19",
+                statement: "She blames adverts for making people buy things that harm.",
+                statementBM: "Dia menyalahkan iklan kerana membuatkan orang membeli makanan yang memudaratkan.",
+                answer: "A",
+                person: "Penny",
+                synonymClue: "“blames adverts” = “blames advertisers” | “things that harm” = “unhealthy food”",
+                synonymClueBM: "“menyalahkan iklan” = “menyalahkan pengiklan” | “benda yang memudaratkan” = “makanan tidak sihat”",
+                quote: "“She blames advertisers for making unhealthy food look so delicious.”",
+                quoteBM: "“Dia menyalahkan pengiklan kerana membuatkan makanan tidak sihat kelihatan begitu sedap.”"
+            },
+            {
+                qNum: "Question 20",
+                statement: "Her family works together to choose healthier food when shopping.",
+                statementBM: "Keluarganya bekerjasama untuk memilih makanan yang lebih sihat semasa membeli-belah.",
+                answer: "C",
+                person: "Minnie",
+                synonymClue: "“family works together... when shopping” = “helps her family check... before they buy anything”",
+                synonymClueBM: "“keluarga bekerjasama semasa membeli-belah” = “membantu keluarganya menyemak... sebelum membeli apa-apa”",
+                quote: "“...which helps her family check exactly how much sugar is inside before they buy anything.”",
+                quoteBM: "“...yang membantu keluarganya menyemak dengan tepat berapa banyak gula di dalamnya sebelum mereka membeli apa-apa.”"
+            },
+            {
+                qNum: "Question 21",
+                statement: "She was surprised to find out that savoury foods like bread and soup contain a lot of sugar.",
+                statementBM: "Dia terkejut apabila mendapati makanan seperti roti dan sup mengandungi banyak gula.",
+                answer: "A",
+                person: "Penny",
+                synonymClue: "“surprised” = “shocked” | “contain a lot of sugar” = “amount of sugar in bread and soup”",
+                synonymClueBM: "“terkejut” = “terkejut (shocked)” | “mengandungi banyak gula” = “jumlah gula di dalam roti dan sup”",
+                quote: "“Penny watched a documentary about healthy eating and was shocked by the amount of sugar in bread and soup.”",
+                quoteBM: "“Penny menonton sebuah dokumentari tentang pemakanan sihat dan terkejut dengan jumlah gula di dalam roti dan sup.”"
+            },
+            {
+                qNum: "Question 22",
+                statement: "He thinks people are smart enough to decide for themselves what to eat without stopping any food completely.",
+                statementBM: "Dia berpendapat orang ramai cukup pintar untuk membuat keputusan sendiri tanpa meninggalkan terus sebarang makanan.",
+                answer: "B",
+                person: "Bart",
+                synonymClue: "“smart enough to decide for themselves” = “clever enough to make their own choices” | “without stopping” = “instead of cutting items out completely”",
+                synonymClueBM: "“cukup pintar membuat keputusan sendiri” = “cukup bijak membuat pilihan sendiri”",
+                quote: "“He believes people are clever enough to make their own choices... instead of cutting items out completely.”",
+                quoteBM: "“Dia percaya orang ramai cukup bijak untuk membuat pilihan sendiri... daripada meninggalkan terus sesuatu makanan.”"
+            },
+            {
+                qNum: "Question 23",
+                statement: "She felt anxious after learning how many spoons of sugar are inside a single soft drink.",
+                statementBM: "Dia berasa bimbang selepas mengetahui berapa banyak sudu gula di dalam satu tin minuman bergas.",
+                answer: "C",
+                person: "Minnie",
+                synonymClue: "“felt anxious” = “was worried” | “single soft drink” = “one can of fizzy cola”",
+                synonymClueBM: "“berasa bimbang” = “berasa risau/bimbang” | “minuman bergas” = “kola bergas”",
+                quote: "“Minnie was worried when she discovered that one can of fizzy cola has seven teaspoons of sugar.”",
+                quoteBM: "“Minnie berasa bimbang apabila mendapati satu tin kola bergas mempunyai tujuh sudu teh gula.”"
+            }
+        ];
+
+        const BONUS_SYNONYM_QUESTIONS = [
+            {
+                qNum: "Bonus Synonym #1",
+                statement: "Who was shocked by the sugar hidden inside bread and soup?",
+                statementBM: "Siapakah yang terkejut dengan gula tersembunyi di dalam roti dan sup?",
+                answer: "A",
+                person: "Penny",
+                synonymClue: "Key detail in Text A",
+                synonymClueBM: "Maklumat penting dalam Teks A",
+                quote: "“Penny watched a documentary about healthy eating and was shocked by the amount of sugar in bread and soup.”",
+                quoteBM: "“Penny menonton sebuah dokumentari tentang pemakanan sihat dan terkejut dengan jumlah gula di dalam roti dan sup.”"
+            },
+            {
+                qNum: "Bonus Synonym #2",
+                statement: "Who discovered that one can of fizzy cola has seven teaspoons of sugar?",
+                statementBM: "Siapakah yang mendapati bahawa satu tin kola bergas mempunyai tujuh sudu teh gula?",
+                answer: "C",
+                person: "Minnie",
+                synonymClue: "Key detail in Text C",
+                synonymClueBM: "Maklumat penting dalam Teks C",
+                quote: "“Minnie was worried when she discovered that one can of fizzy cola has seven teaspoons of sugar.”",
+                quoteBM: "“Minnie berasa bimbang apabila mendapati satu tin kola bergas mempunyai tujuh sudu teh gula.”"
+            },
+            {
+                qNum: "Bonus Synonym #3",
+                statement: "Who thinks it is healthy to eat a wide variety of food groups instead of cutting items out?",
+                statementBM: "Siapakah yang berpendapat adalah sihat untuk makan pelbagai kumpulan makanan daripada meninggalkan terus sesuatu makanan?",
+                answer: "B",
+                person: "Bart",
+                synonymClue: "Key detail in Text B",
+                synonymClueBM: "Maklumat penting dalam Teks B",
+                quote: "“...it is healthy to eat a wide variety of food groups instead of cutting items out completely.”",
+                quoteBM: "“...adalah sihat untuk makan pelbagai kumpulan makanan daripada meninggalkan terus sesuatu makanan.”"
+            },
+            {
+                qNum: "Bonus Synonym #4",
+                statement: "Whose mother is also concerned about eating too much sweet food?",
+                statementBM: "Ibu siapakah yang turut bimbang tentang pengambilan terlalu banyak makanan manis?",
+                answer: "C",
+                person: "Minnie",
+                synonymClue: "“concerned” = “worried”",
+                synonymClueBM: "“prihatin / bimbang” = “risau”",
+                quote: "“Her mother is also concerned about eating too much sweet food.”",
+                quoteBM: "“Ibunya juga bimbang tentang pengambilan terlalu banyak makanan manis.”"
+            }
+        ];
+
+        const CHARACTER_CONFIG = {
+            A: {
+                letter: "A",
+                name: "Penny",
+                emoji: "🍎",
+                primaryColor: "#f43f5e",
+                secondaryColor: "#881337",
+                ringColor: "#fda4af",
+                juiceColor: "#fb7185"
+            },
+            B: {
+                letter: "B",
+                name: "Bart",
+                emoji: "🍊",
+                primaryColor: "#3b82f6",
+                secondaryColor: "#1e3a8a",
+                ringColor: "#93c5fd",
+                juiceColor: "#60a5fa"
+            },
+            C: {
+                letter: "C",
+                name: "Minnie",
+                emoji: "🥝",
+                primaryColor: "#10b981",
+                secondaryColor: "#064e3b",
+                ringColor: "#6ee7b7",
+                juiceColor: "#34d399"
+            },
+            BOMB: {
+                letter: "💣",
+                name: "Sugar Bomb!",
+                emoji: "💣",
+                primaryColor: "#27272a",
+                secondaryColor: "#09090b",
+                ringColor: "#ef4444",
+                juiceColor: "#f97316"
+            }
+        };
+
+        let soundEnabled = true;
+        let musicEnabled = true;
+        let audioInitialized = false;
+        let whooshSynth, bladeMetalSynth, fruitSquishSynth, dingSynth, buzzSynth, bombExplosionSynth;
+        let bgmLeadSynth, bgmBassSynth, bgmDrumSynth, bgmLoop;
+        let lastWhooshTime = 0;
+
+        // Upbeat Pentatonic Ninja Dojo Melody
+        const DOJO_MELODY = [
+            "E4", "G4", "A4", "B4", "D5", "B4", "A4", "G4",
+            "E4", "G4", "A4", "D5", "E5", null, "D5", "B4",
+            "A4", "B4", "D5", "B4", "A4", "G4", "E4", "D4",
+            "E4", "G4", "E4", "D4", "E4", null, null, null
+        ];
+        const DOJO_BASS = [
+            "E2", null, "E2", "G2", "A2", null, "A2", "G2",
+            "E2", null, "E2", "B2", "D3", null, "B2", "G2",
+            "A2", null, "A2", "B2", "G2", null, "E2", "D2",
+            "E2", "E2", "D2", "D2", "E2", null, "B1", null
+        ];
+        let bgmStep = 0;
+
+        async function initAudio() {
+ if(typeof Tone === "undefined")return;
+            if (audioInitialized) return;
+            try {
+                await Tone.start();
+
+                // 1. Air Swish when dragging blade
+                const whooshFilter = new Tone.Filter(1400, "bandpass").toDestination();
+                whooshSynth = new Tone.NoiseSynth({
+                    noise: { type: "pink" },
+                    envelope: { attack: 0.005, decay: 0.09, sustain: 0 }
+                }).connect(whooshFilter);
+                whooshSynth.volume.value = -10;
+
+                // 2. Sharp Katana Blade Metallic Zing on fruit impact
+                bladeMetalSynth = new Tone.Synth({
+                    oscillator: { type: "sawtooth" },
+                    envelope: { attack: 0.001, decay: 0.11, sustain: 0, release: 0.05 }
+                }).toDestination();
+                bladeMetalSynth.volume.value = -7;
+
+                // 3. Juicy Fruit Splat / Squish sound when fruit splits
+                const squishFilter = new Tone.Filter(950, "lowpass").toDestination();
+                fruitSquishSynth = new Tone.NoiseSynth({
+                    noise: { type: "brown" },
+                    envelope: { attack: 0.002, decay: 0.16, sustain: 0 }
+                }).connect(squishFilter);
+                fruitSquishSynth.volume.value = -3;
+
+                // 4. Correct Answer Chime
+                dingSynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 0.01, decay: 0.25, sustain: 0.05, release: 0.3 }
+                }).toDestination();
+                dingSynth.volume.value = -6;
+
+                // 5. Wrong Answer / Bomb Buzz
+                buzzSynth = new Tone.MembraneSynth({
+                    pitchDecay: 0.08,
+                    octaves: 3,
+                    envelope: { attack: 0.001, decay: 0.35, sustain: 0 }
+                }).toDestination();
+                buzzSynth.volume.value = -4;
+
+                bombExplosionSynth = new Tone.NoiseSynth({
+                    noise: { type: "brown" },
+                    envelope: { attack: 0.005, decay: 0.45, sustain: 0 }
+                }).toDestination();
+                bombExplosionSynth.volume.value = -2;
+
+                // 6. Ninja Dojo Background Music Instruments (Koto/Shamisen vibe + Taiko beat)
+                bgmLeadSynth = new Tone.Synth({
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 0.005, decay: 0.18, sustain: 0.02, release: 0.12 }
+                }).toDestination();
+                bgmLeadSynth.volume.value = -15;
+
+                bgmBassSynth = new Tone.Synth({
+                    oscillator: { type: "fmsquare", modulationIndex: 2 },
+                    envelope: { attack: 0.01, decay: 0.2, sustain: 0.05, release: 0.1 }
+                }).toDestination();
+                bgmBassSynth.volume.value = -18;
+
+                bgmDrumSynth = new Tone.MembraneSynth({
+                    pitchDecay: 0.03,
+                    octaves: 2.5,
+                    envelope: { attack: 0.001, decay: 0.12, sustain: 0 }
+                }).toDestination();
+                bgmDrumSynth.volume.value = -16;
+
+                Tone.Transport.bpm.value = 136;
+                bgmLoop = new Tone.Loop((time) => {
+                    if (!musicEnabled || (gameState !== "PLAYING" && gameState !== "PAUSED_TOAST")) return;
+
+                    // Lower volume slightly while reading the Synonym Detective toast
+                    const volOffset = gameState === "PAUSED_TOAST" ? -7 : 0;
+                    bgmLeadSynth.volume.value = -15 + volOffset;
+                    bgmBassSynth.volume.value = -18 + volOffset;
+                    bgmDrumSynth.volume.value = -16 + volOffset;
+
+                    const note = DOJO_MELODY[bgmStep % DOJO_MELODY.length];
+                    const bass = DOJO_BASS[bgmStep % DOJO_BASS.length];
+
+                    if (note) {
+                        bgmLeadSynth.triggerAttackRelease(note, "16n", time);
+                    }
+                    if (bass) {
+                        bgmBassSynth.triggerAttackRelease(bass, "8n", time);
+                    }
+                    // Taiko drum rhythm on downbeats and syncopated steps
+                    if (bgmStep % 4 === 0) {
+                        bgmDrumSynth.triggerAttackRelease("E1", "16n", time);
+                    } else if (bgmStep % 4 === 2 && bgmStep % 8 === 6) {
+                        bgmDrumSynth.triggerAttackRelease("B1", "32n", time);
+                    }
+
+                    bgmStep++;
+                }, "8n");
+
+                audioInitialized = true;
+            } catch (e) {
+                console.warn("Audio init skipped:", e);
+            }
+        }
+
+        function startBackgroundMusic() {
+            if (!audioInitialized) return;
+            try {
+                if (Tone.Transport.state !== "started") {
+                    Tone.Transport.start();
+                }
+                if (bgmLoop && bgmLoop.state !== "started") {
+                    bgmStep = 0;
+                    bgmLoop.start(0);
+                }
+            } catch (e) {}
+        }
+
+        function stopBackgroundMusic() {
+            try {
+                if (bgmLoop && bgmLoop.state === "started") {
+                    bgmLoop.stop();
+                }
+            } catch (e) {}
+        }
+
+        function playSliceWhoosh() {
+            if (!soundEnabled || !audioInitialized) return;
+            const now = performance.now();
+            if (now - lastWhooshTime < 90) return;
+            lastWhooshTime = now;
+            try {
+                whooshSynth.triggerAttackRelease("32n");
+            } catch (e) {}
+        }
+
+        function playFruitSlashSound() {
+            if (!soundEnabled || !audioInitialized) return;
+            try {
+                const now = Tone.now();
+                // Sharp katana swipe pitch slide + juicy fruit splat
+                bladeMetalSynth.triggerAttackRelease("B5", "32n", now);
+                bladeMetalSynth.frequency.rampTo("E4", 0.07, now);
+                fruitSquishSynth.triggerAttackRelease("16n", now + 0.01);
+            } catch (e) {}
+        }
+
+        function playCorrectSound() {
+            if (!soundEnabled || !audioInitialized) return;
+            try { dingSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "8n", "+0.05"); } catch (e) {}
+        }
+
+        function playWrongSound(isBomb = false) {
+            if (!soundEnabled || !audioInitialized) return;
+            try {
+                buzzSynth.triggerAttackRelease("G1", "4n");
+                if (isBomb && bombExplosionSynth) {
+                    bombExplosionSynth.triggerAttackRelease("8n");
+                }
+            } catch (e) {}
+        }
+
+        const canvas = document.getElementById("ninjaCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let gameState = "MENU"; // MENU, PLAYING, PAUSED_TOAST, PAUSED_MODAL, GAMEOVER
+        let gameMode = "EXAM";  // EXAM or ENDLESS
+        let questionPool = [];
+        let currentQIndex = 0;
+        let score = 0;
+        let combo = 0;
+        let lives = 3;
+        let totalAttempts = 0;
+        let correctHits = 0;
+        let slowMotion = false;
+        let showTranslation = true;
+
+        let activeTargets = [];
+        let slicedHalves = [];
+        let particles = [];
+        let floatingTexts = [];
+        let bladeTrail = [];
+        let isDragging = false;
+        let lastSpawnTime = 0;
+        let screenShakeTime = 0;
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        window.addEventListener("resize", resizeCanvas);
+
+        function spawnWave() {
+            const w = canvas.width;
+            const h = canvas.height;
+            const isMobilePortrait = w < 520;
+            const radius = isMobilePortrait
+                ? Math.max(38, Math.min(48, w * 0.115))
+                : Math.max(46, Math.min(62, Math.min(w, h) * 0.095));
+
+            // Always spawn A, B, and C cleanly spaced across the screen so students can choose!
+            const keys = ["A", "B", "C"];
+            // Shuffle order slightly so A, B, C appear in varied horizontal lanes
+            keys.sort(() => Math.random() - 0.5);
+
+            // Optionally add a Sugar Bomb 35% of the time
+            if (Math.random() < 0.38) {
+                keys.push("BOMB");
+                keys.sort(() => Math.random() - 0.5);
+            }
+
+            const count = keys.length;
+            const speedFactor = slowMotion ? 0.68 : 1.0;
+            const gravity = 0.20 * (h / 620) * (slowMotion ? 0.55 : 1.0);
+
+            // Use wider horizontal margins on narrow mobile screens so targets don't clip off the sides
+            const usableWidthRatio = isMobilePortrait ? 0.86 : 0.76;
+            const sideMarginRatio = (1 - usableWidthRatio) / 2;
+            const jitterRange = isMobilePortrait ? 12 : 32;
+
+            keys.forEach((key, idx) => {
+                const laneWidth = (w * usableWidthRatio) / count;
+                const rawStartX = (w * sideMarginRatio) + laneWidth * (idx + 0.5) + (Math.random() - 0.5) * jitterRange;
+                const startX = Math.max(radius + 8, Math.min(w - radius - 8, rawStartX));
+                const startY = h + radius + 15;
+
+                // Calculate velocity so target arcs up to 64% - 82% of canvas height
+                const peakHeight = h * (0.64 + Math.random() * 0.17);
+                const vy = -Math.sqrt(2 * gravity * peakHeight);
+                const centerBias = (w / 2 - startX) * (isMobilePortrait ? 0.0028 : 0.0038) * speedFactor;
+                const vx = centerBias + (Math.random() - 0.5) * (isMobilePortrait ? 0.8 : 1.4) * speedFactor;
+
+                activeTargets.push({
+                    type: key,
+                    config: CHARACTER_CONFIG[key],
+                    x: startX,
+                    y: startY,
+                    vx: vx,
+                    vy: vy,
+                    gravity: gravity,
+                    radius: key === "BOMB" ? radius * 0.85 : radius,
+                    angle: (Math.random() - 0.5) * 0.4,
+                    vAngle: (Math.random() - 0.5) * 0.022 * speedFactor,
+                    sliced: false
+                });
+            });
+        }
+
+        function lineIntersectsCircle(x1, y1, x2, y2, cx, cy, r) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const lenSq = dx * dx + dy * dy;
+            if (lenSq === 0) {
+                return Math.hypot(cx - x1, cy - y1) <= r;
+            }
+            let t = ((cx - x1) * dx + (cy - y1) * dy) / lenSq;
+            t = Math.max(0, Math.min(1, t));
+            const nearestX = x1 + t * dx;
+            const nearestY = y1 + t * dy;
+            return Math.hypot(cx - nearestX, cy - nearestY) <= r;
+        }
+
+        function createJuiceSplatter(x, y, color, count = 22) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 9;
+                particles.push({
+                    x,
+                    y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 1.5,
+                    radius: 3 + Math.random() * 6,
+                    color,
+                    alpha: 1,
+                    decay: 0.018 + Math.random() * 0.015
+                });
+            }
+        }
+
+        function createSlicedHalves(target, sliceAngle) {
+            const speed = 3.2;
+            [-1, 1].forEach(dir => {
+                slicedHalves.push({
+                    config: target.config,
+                    x: target.x + dir * 8,
+                    y: target.y,
+                    vx: target.vx + Math.cos(sliceAngle + (dir * Math.PI) / 2) * speed,
+                    vy: target.vy - 1.5,
+                    gravity: target.gravity * 1.15,
+                    radius: target.radius,
+                    angle: target.angle,
+                    vAngle: dir * 0.08,
+                    side: dir,
+                    alpha: 1
+                });
+            });
+        }
+
+        function addFloatingText(x, y, text, color) {
+            floatingTexts.push({
+                x,
+                y,
+                text,
+                color,
+                alpha: 1,
+                vy: -2.2
+            });
+        }
+
+        function handleTargetSlice(target, sliceAngle) {
+ if(gameState!=="PLAYING"||target.sliced)return;
+            target.sliced = true;
+            const currentQ = questionPool[currentQIndex];
+
+            createSlicedHalves(target, sliceAngle);
+            createJuiceSplatter(target.x, target.y, target.config.juiceColor, 28);
+
+            // Play the crisp katana fruit slash sound immediately on every target slice
+            playFruitSlashSound();
+
+            if (target.type === "BOMB") {
+                playWrongSound(true);
+                screenShakeTime = 18;
+                combo = 0;
+                lives = Math.max(0, lives - 1);
+                addFloatingText(target.x, target.y, "💥 SUGAR BOMB! -1 ❤️", "#f87171");
+                updateHUD();
+                if (lives <= 0) {
+                    setTimeout(() => finishGame(false), 600);
+                }
+                return;
+            }
+
+            totalAttempts++;(answerHistory[currentQIndex] ||= []).push(target.type);
+
+            if (target.type === currentQ.answer) {
+                // Correct Slice!
+                playCorrectSound();
+                correctHits++;
+                combo++;
+                const pointsEarned = 100 + (combo > 1 ? (combo - 1) * 25 : 0);
+                score += pointsEarned;
+
+                // Track first-attempt mark for this question (1 mark if not previously missed)
+                if (questionFirstAttemptCorrect[currentQIndex] === undefined) {
+                    questionFirstAttemptCorrect[currentQIndex] = true;
+                }
+                questionAttemptLog.push(`${currentQ.qNum}: ${target.type} (✓)`);
+
+                addFloatingText(target.x, target.y, `🎯 +${pointsEarned} (${target.config.name}!)`, "#4ade80");
+                updateHUD();
+
+                // Send real-time per-question answer to Google Sheet if connected
+                sendToGoogleSheet({
+                    eventType: "QUESTION_ANSWERED",
+                    currentQuestion: currentQ.qNum,
+                    chosenAnswer: `${target.type} (${target.config.name})`,
+                    isCorrect: true
+                });
+
+                // Show Synonym Detective Evidence Toast so students learn the exact text match
+                showEvidenceToast(currentQ);
+            } else {
+                // Wrong Character Sliced!
+                playWrongSound();
+                screenShakeTime = 14;
+                combo = 0;
+                lives = Math.max(0, lives - 1);
+
+                // Mark first attempt as false if they sliced the wrong person first
+                if (questionFirstAttemptCorrect[currentQIndex] === undefined) {
+                    questionFirstAttemptCorrect[currentQIndex] = false;
+                }
+                questionAttemptLog.push(`${currentQ.qNum}: ${target.type} (✗)`);
+
+                addFloatingText(
+                    target.x,
+                    target.y,
+                    `❌ Oops! Not ${target.config.name} (${target.type})`,
+                    "#fb7185"
+                );
+                updateHUD();
+
+                // Send real-time wrong attempt to Google Sheet if connected
+                sendToGoogleSheet({
+                    eventType: "QUESTION_ANSWERED",
+                    currentQuestion: currentQ.qNum,
+                    chosenAnswer: `${target.type} (${target.config.name})`,
+                    isCorrect: false
+                });
+
+                if (lives <= 0) {
+                    setTimeout(() => finishGame(false), 650);
+                }
+            }
+        }
+
+        function getCurrentMarks() {
+            return Object.values(questionFirstAttemptCorrect).filter(v => v === true).length;
+        }
+
+        function escapeHTML(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+        const SCORE_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwZV9JS_g5RUcF1mb3o86OEcBV9ZszEEWPYT5NIOJU5kprDXRniOSalw-KjtLgQr89-/exec';
+        let recordingAttempt=null,recordingFrame=null,recordingTimer=null,answerHistory={};
+        function renderLeaderboard(board){
+ let box=document.getElementById('pupilLeaderboard');if(!box){box=document.createElement('section');box.id='pupilLeaderboard';box.className='mt-4 bg-stone-900 border-2 border-amber-500 rounded-2xl p-4 text-left';document.getElementById('sheetSyncBanner').insertAdjacentElement('afterend',box)}
+ if(!board){box.textContent='Class ranking will appear after saving. The teacher needs to update the recording script.';return}
+ if(!board.available){box.textContent=board.reason||'Class ranking is available in exam mode.';return}
+ box.innerHTML='<h3 class="text-xl font-bold text-yellow-300">🏆 Class leaderboard · '+escapeHTML(board.pupilClass)+'</h3><p class="text-sm text-amber-100">Best reading marks per pupil · Equal marks share a rank.</p><p class="mt-2 text-emerald-300 font-bold">Your rank: '+(board.yourRank||'—')+' of '+board.totalPupils+' · Your best: '+board.yourBest+'/10</p><div class="overflow-x-auto"><table class="w-full mt-3 text-sm"><thead><tr><th class="text-left p-2">Rank</th><th class="text-left p-2">Pupil</th><th class="text-right p-2">Marks</th></tr></thead><tbody>'+board.rows.map(r=>'<tr class="border-t border-stone-700 '+(r.you?'text-yellow-300':'text-white')+'"><td class="p-2">'+r.rank+'</td><td class="p-2">'+escapeHTML(r.name)+(r.you?' (You)':'')+'</td><td class="text-right p-2">'+r.marks+'/10</td></tr>').join('')+'</tbody></table></div><p class="text-xs text-stone-300 mt-2">Top 10 ranks and your position. Updated when your score was saved. Names and marks are visible to pupils in this class.</p>';
+ }
+        function syncNotice(message){const el=document.getElementById('sheetSyncText');if(el)el.textContent=message;}
+        async function sendToGoogleSheet(extraData={}){
+          if(extraData.eventType!=='FINAL_SCORE')return;
+          if(!recordingAttempt)return;
+          if(!recordingAttempt.payload){recordingAttempt.payload={id:recordingAttempt.id,name:currentStudentName,pupilClass:currentStudentClass,mode:gameMode,answers:questionPool.map((q,i)=>({question:q.qNum,history:answerHistory[i]||[]})),score:getCurrentMarks(),total:questionPool.length,arcadeScore:score,finished:new Date().toISOString()};sessionResultsHistory.unshift({timestamp:new Date().toLocaleString(),studentName:currentStudentName,studentClass:currentStudentClass,marks:getCurrentMarks(),totalQuestions:questionPool.length,score,accuracy:totalAttempts?Math.round(correctHits/totalAttempts*100):0,details:questionAttemptLog.join(' | ')});renderSessionLogList();}
+          if(recordingAttempt.saved){syncNotice('✓ Your score has been recorded for Mr Z.');return;}
+          if(!SCORE_ENDPOINT){syncNotice('Recording is awaiting teacher setup. Your result is in this session log only.');return;}
+          clearTimeout(recordingTimer);recordingFrame?.remove();syncNotice('Sending your score to Mr Z… Please keep this page open.');
+          recordingFrame=document.createElement('iframe');recordingFrame.hidden=true;recordingFrame.title='Private score submission';recordingFrame.src=SCORE_ENDPOINT+'?channel='+encodeURIComponent(recordingAttempt.id)+'&parentOrigin='+encodeURIComponent(location.origin);document.body.append(recordingFrame);
+          recordingTimer=setTimeout(()=>{syncNotice('Your score has not been confirmed. Reconnecting…');if(recordingAttempt.retries++<3)sendToGoogleSheet({eventType:'FINAL_SCORE'});else document.getElementById('btnRetrySync').classList.remove('hidden')},30000);
+        }
+        window.addEventListener('message',e=>{if(!recordingAttempt||!recordingFrame||!e.data||e.data.channel!==recordingAttempt.id||!/^https:\/\/([a-z0-9-]+\.)*googleusercontent\.com$/.test(e.origin))return;if(e.data.type==='score-ready')e.source.postMessage({type:'save-score',channel:recordingAttempt.id,payload:recordingAttempt.payload},e.origin);if(e.data.type==='score-saved'&&e.data.result?.ok&&e.data.result.id===recordingAttempt.id&&e.data.result.score===recordingAttempt.payload.score){recordingAttempt.saved=true;clearTimeout(recordingTimer);syncNotice('✓ Your score has been recorded for Mr Z.');renderLeaderboard(e.data.result.leaderboard)}if(e.data.type==='score-error'){syncNotice('Score saving was not confirmed. Please retry.');document.getElementById('btnRetrySync').classList.remove('hidden')}});
+        window.addEventListener('online',()=>{if(recordingAttempt?.payload&&!recordingAttempt.saved)sendToGoogleSheet({eventType:'FINAL_SCORE'})});
+        function renderSessionLogList() {
+            const countBadge = document.getElementById("sessionCountBadge");
+            const listEl = document.getElementById("sessionLogList");
+            if (!listEl) return;
+            countBadge.textContent = sessionResultsHistory.length;
+            if (sessionResultsHistory.length === 0) {
+                listEl.innerHTML = `<div class="text-stone-500 italic">No pupil attempts recorded in this session yet.</div>`;
+                return;
+            }
+            listEl.innerHTML = sessionResultsHistory.map((r, i) => `
+                <div class="flex flex-wrap items-center justify-between gap-2 bg-stone-900 px-3 py-1.5 rounded-xl border border-stone-700">
+                    <div>
+                        <span class="font-bold text-amber-300">${i + 1}. ${escapeHTML(r.studentName)}</span>
+                        <span class="text-stone-400">(${escapeHTML(r.studentClass)})</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-sky-300 font-bold">Marks: ${r.marks}/${r.totalQuestions}</span>
+                        <span class="text-yellow-300 font-bold">${r.score} pts</span>
+                        <span class="text-emerald-400">${r.accuracy}%</span>
+                    </div>
+                </div>
+            `).join("");
+        }
+
+        function showEvidenceToast(qObj) {
+            gameState = "PAUSED_TOAST";
+            const toast = document.getElementById("evidenceToast");
+            const cfg = CHARACTER_CONFIG[qObj.answer];
+
+            document.getElementById("toastIcon").textContent = cfg.emoji;
+            document.getElementById("toastTitle").textContent = `SLASH! Correct Match: ${qObj.answer} (${qObj.person})`;
+            document.getElementById("toastClue").innerHTML = `🔎 <strong>Synonym Link:</strong> ${qObj.synonymClue}`;
+            document.getElementById("toastClueBM").textContent = `BM: ${qObj.synonymClueBM}`;
+            document.getElementById("toastQuote").textContent = qObj.quote;
+            document.getElementById("toastQuoteBM").textContent = `Terjemahan: ${qObj.quoteBM}`;
+
+            toast.classList.remove("hidden");
+        }
+
+        function advanceToNextQuestion() {
+            document.getElementById("evidenceToast").classList.add("hidden");
+            activeTargets = [];
+            currentQIndex++;
+
+            if (currentQIndex >= questionPool.length) {
+                if (gameMode === "ENDLESS") {
+                    // Reshuffle all questions for endless mode
+                    questionPool = [...EXAM_QUESTIONS, ...BONUS_SYNONYM_QUESTIONS].sort(() => Math.random() - 0.5);
+                    currentQIndex = 0;
+                } else {
+                    finishGame(true);
+                    return;
+                }
+            }
+
+            loadCurrentQuestionUI();
+            gameState = "PLAYING";
+            lastSpawnTime = performance.now() - 1500;
+        }
+
+        function loadCurrentQuestionUI() {
+            const q = questionPool[currentQIndex];
+            document.getElementById("qNumberTag").textContent = q.qNum;
+            document.getElementById("qTextDisplay").textContent = `“${q.statement}”`;
+            const transEl = document.getElementById("qTransDisplay");
+            transEl.textContent = `(${q.statementBM})`;
+            transEl.classList.toggle("hidden", !showTranslation);
+            updateHUD();
+        }
+
+        function updateHUD() {
+            document.getElementById("scoreDisplay").textContent = score;
+            const isSmallScreen = window.innerWidth < 640;
+            document.getElementById("roundBadge").textContent =
+                gameMode === "EXAM"
+                    ? (isSmallScreen ? `Q${currentQIndex + 1}/${questionPool.length}` : `Question ${currentQIndex + 1} / ${questionPool.length}`)
+                    : (isSmallScreen ? `Wave ${correctHits + 1}` : `Endless Wave ${correctHits + 1}`);
+
+            const hearts = "❤️".repeat(lives) + "🖤".repeat(Math.max(0, 3 - lives));
+            document.getElementById("livesDisplay").textContent = hearts;
+            const comboBadge = document.getElementById("comboBadge");
+            if (combo >= 2) {
+                comboBadge.textContent = isSmallScreen ? `${combo}x!` : `${combo}x COMBO!`;
+                comboBadge.classList.remove("hidden");
+            } else {
+                comboBadge.classList.add("hidden");
+            }
+        }
+
+        async function startGame(mode) {
+            const nameInput = document.getElementById("studentNameInput");
+            const classInput = document.getElementById("studentClassInput");
+            const nameErr = document.getElementById("nameErrorMsg");
+
+            if (nameInput && !nameInput.value.trim()) {
+                nameErr.classList.remove("hidden");
+                nameInput.focus();
+                return;
+            }
+            if (nameErr) nameErr.classList.add("hidden");
+
+            currentStudentName = nameInput ? nameInput.value.trim() : "Pupil";
+            if(!classInput?.value.trim()){nameErr.textContent='Please enter your class too.';nameErr.classList.remove('hidden');classInput?.focus();return;}
+            currentStudentClass = classInput.value.trim();
+            questionFirstAttemptCorrect = {};
+            questionAttemptLog = [];answerHistory={};clearTimeout(recordingTimer);recordingFrame?.remove();recordingFrame=null;recordingAttempt={id:crypto.randomUUID?.()||('attempt-'+Date.now()+'-'+Math.random().toString(36).slice(2)),saved:false,payload:null,retries:0};
+
+            await initAudio();
+            gameMode = mode;
+            score = 0;
+            combo = 0;
+            lives = 3;
+            totalAttempts = 0;
+            correctHits = 0;
+            currentQIndex = 0;
+            activeTargets = [];
+            slicedHalves = [];
+            particles = [];
+            floatingTexts = [];
+
+            if (mode === "EXAM") {
+                questionPool = [...EXAM_QUESTIONS];
+            } else {
+                questionPool = [...EXAM_QUESTIONS, ...BONUS_SYNONYM_QUESTIONS].sort(() => Math.random() - 0.5);
+            }
+
+            document.getElementById("startModal").classList.add("hidden");
+            document.getElementById("endModal").classList.add("hidden");
+            document.getElementById("evidenceToast").classList.add("hidden");
+
+            resizeCanvas();
+            loadCurrentQuestionUI();
+            gameState = "PLAYING";
+            lastSpawnTime = performance.now() - 1200;
+            startBackgroundMusic();
+        }
+
+        function finishGame(victory) {
+ if(gameState === "GAMEOVER")return;
+            gameState = "GAMEOVER";document.getElementById("pupilLeaderboard")?.remove();
+            stopBackgroundMusic();
+            const endModal = document.getElementById("endModal");
+            const marks = getCurrentMarks();
+            const totalQ = questionPool.length || 10;
+
+            document.getElementById("endEmoji").textContent = victory ? "🥷🏆" : "💥🍉";
+            document.getElementById("endTitle").textContent = victory
+                ? `Great Job, ${currentStudentName}!`
+                : `Good Effort, ${currentStudentName}!`;
+            document.getElementById("endSubtitle").textContent = victory
+                ? "You matched all Part 4 reading questions with their synonym clues!"
+                : "Review the synonym clues below and slice again!";
+
+            document.getElementById("finalMarks").textContent = `${marks}/${totalQ}`;
+            document.getElementById("finalScore").textContent = score;
+            const acc = totalAttempts > 0 ? Math.round((correctHits / totalAttempts) * 100) : 100;
+            document.getElementById("finalAccuracy").textContent = `${acc}%`;
+
+            // Record final marks to Google Sheet & Session Log
+            renderLeaderboard(null);sendToGoogleSheet({ eventType: "FINAL_SCORE" });
+
+            // Populate review list
+            const reviewList = document.getElementById("reviewList");
+            reviewList.innerHTML = EXAM_QUESTIONS.map(item => `
+                <div class="p-2.5 rounded-xl bg-stone-900/90 border border-stone-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <span class="font-bold text-amber-300">${item.qNum}:</span>
+                        <span class="text-stone-200">“${item.statement}”</span>
+                        <div class="bm-trans ${showTranslation ? '' : 'hidden'} text-[11px] text-amber-200/80 italic">(${item.statementBM})</div>
+                        <div class="text-[11px] text-emerald-300 mt-0.5">🔎 ${item.synonymClue}</div>
+                    </div>
+                    <span class="shrink-0 font-game font-bold px-3 py-1 rounded-full text-white text-xs ${
+                        item.answer === 'A' ? 'bg-rose-600' : item.answer === 'B' ? 'bg-blue-600' : 'bg-emerald-600'
+                    }">
+                        ${item.answer} (${item.person})
+                    </span>
+                </div>
+            `).join("");
+
+            endModal.classList.remove("hidden");
+        }
+
+        function getCanvasPos(evt) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+            const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function addBladePoint(x, y) {
+            const now = performance.now();
+            if (bladeTrail.length > 0 && gameState === "PLAYING") {
+                const prev = bladeTrail[bladeTrail.length - 1];
+                const dist = Math.hypot(x - prev.x, y - prev.y);
+                if (dist > 14) {
+                    playSliceWhoosh();
+                }
+                const sliceAngle = Math.atan2(y - prev.y, x - prev.x);
+
+                // Check collision against all unsliced targets
+                for (let i = 0; i < activeTargets.length; i++) {
+                    const t = activeTargets[i];
+                    if (!t.sliced && lineIntersectsCircle(prev.x, prev.y, x, y, t.x, t.y, t.radius)) {
+                        handleTargetSlice(t, sliceAngle);
+                        break;
+                    }
+                }
+            }
+            bladeTrail.push({ x, y, time: now });
+        }
+
+        window.addEventListener('touchcancel',()=>{isDragging=false});window.addEventListener('blur',()=>{isDragging=false});
+window.addEventListener('keydown',e=>{if(gameState!=="PLAYING"||/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;const k=e.key.toUpperCase();if(['A','B','C'].includes(k)){const t=activeTargets.find(t=>!t.sliced&&t.type===k&&t.y>0&&t.y<canvas.height);if(t){e.preventDefault();handleTargetSlice(t,0)}}});
+canvas.addEventListener("mousedown", e => {
+            initAudio();
+            isDragging = true;
+            const pos = getCanvasPos(e);
+            bladeTrail = [];
+            addBladePoint(pos.x, pos.y);
+            // Also allow direct click-slice for smartboards that tap instead of drag
+            addBladePoint(pos.x + 2, pos.y + 2);
+        });
+
+        window.addEventListener("mousemove", e => {
+            if (!isDragging) return;
+            const pos = getCanvasPos(e);
+            addBladePoint(pos.x, pos.y);
+        });
+
+        window.addEventListener("mouseup", () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener("touchstart", e => {
+            e.preventDefault();
+            initAudio();
+            isDragging = true;
+            const pos = getCanvasPos(e);
+            bladeTrail = [];
+            addBladePoint(pos.x, pos.y);
+            addBladePoint(pos.x + 2, pos.y + 2);
+        }, { passive: false });
+
+        canvas.addEventListener("touchmove", e => {
+            e.preventDefault();
+            if (!isDragging) return;
+            const pos = getCanvasPos(e);
+            addBladePoint(pos.x, pos.y);
+        }, { passive: false });
+
+        window.addEventListener("touchend", () => {
+            isDragging = false;
+        });
+
+        function drawTargetBadge(t, halfSide = 0) {
+            ctx.save();
+            ctx.translate(t.x, t.y);
+            ctx.rotate(t.angle);
+
+            if (halfSide !== 0) {
+                ctx.beginPath();
+                if (halfSide === -1) {
+                    ctx.rect(-t.radius * 1.4, -t.radius * 1.4, t.radius * 1.4, t.radius * 2.8);
+                } else {
+                    ctx.rect(0, -t.radius * 1.4, t.radius * 1.4, t.radius * 2.8);
+                }
+                ctx.clip();
+            }
+
+            // Outer glowing ring
+            ctx.beginPath();
+            ctx.arc(0, 0, t.radius, 0, Math.PI * 2);
+            ctx.fillStyle = t.config.primaryColor;
+            ctx.shadowColor = "rgba(0,0,0,0.55)";
+            ctx.shadowBlur = 14;
+            ctx.fill();
+
+            // Rind / Border
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = t.config.ringColor;
+            ctx.stroke();
+
+            // Inner circle
+            ctx.beginPath();
+            ctx.arc(0, 0, t.radius * 0.78, 0, Math.PI * 2);
+            ctx.fillStyle = t.config.secondaryColor;
+            ctx.fill();
+
+            // Character Letter & Name
+            ctx.fillStyle = "#ffffff";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            if (t.type === "BOMB") {
+                ctx.font = `bold ${Math.round(t.radius * 0.85)}px Bangers, Fredoka, sans-serif`;
+                ctx.fillText("💣", 0, -4);
+                ctx.font = `400 ${Math.round(t.radius * 0.32)}px Shojumaru, Bangers, sans-serif`;
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = "#09090b";
+                ctx.strokeText("BOMB!", 0, t.radius * 0.52);
+                ctx.fillStyle = "#fca5a5";
+                ctx.fillText("BOMB!", 0, t.radius * 0.52);
+            } else {
+                ctx.font = `400 ${Math.round(t.radius * 0.72)}px Arial, sans-serif`;
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = "#1c0d06";
+                ctx.strokeText(`${t.config.letter} ${t.config.emoji}`, 0, -t.radius * 0.14);
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText(`${t.config.letter} ${t.config.emoji}`, 0, -t.radius * 0.14);
+
+                ctx.font = `400 ${Math.round(t.radius * 0.42)}px Arial, sans-serif`;
+                ctx.lineWidth = 4.5;
+                ctx.strokeStyle = "#1c0d06";
+                ctx.strokeText(t.config.name.toUpperCase(), 0, t.radius * 0.42);
+                ctx.fillStyle = "#fef08a";
+                ctx.fillText(t.config.name.toUpperCase(), 0, t.radius * 0.42);
+            }
+
+            ctx.restore();
+        }
+
+        function drawBladeTrail() {
+            const now = performance.now();
+            bladeTrail = bladeTrail.filter(p => now - p.time < 180);
+            if (bladeTrail.length < 2) return;
+
+            ctx.save();
+            for (let i = 1; i < bladeTrail.length; i++) {
+                const p0 = bladeTrail[i - 1];
+                const p1 = bladeTrail[i];
+                const age = (now - p1.time) / 180;
+                const width = Math.max(2, (1 - age) * 14);
+
+                ctx.beginPath();
+                ctx.moveTo(p0.x, p0.y);
+                ctx.lineTo(p1.x, p1.y);
+                ctx.strokeStyle = `rgba(254, 240, 138, ${1 - age})`;
+                ctx.lineWidth = width;
+                ctx.lineCap = "round";
+                ctx.shadowColor = "#38bdf8";
+                ctx.shadowBlur = 12;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function animateLoop(timestamp) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            if (screenShakeTime > 0) {
+                screenShakeTime--;
+                const dx = (Math.random() - 0.5) * 10;
+                const dy = (Math.random() - 0.5) * 10;
+                ctx.translate(dx, dy);
+            }
+
+            // Spawn new waves when all active targets fall off screen during PLAYING state
+            if (gameState === "PLAYING") {
+                activeTargets = activeTargets.filter(
+                    t => !t.sliced && t.y - t.radius <= canvas.height + 60
+                );
+
+                if (activeTargets.length === 0 && timestamp - lastSpawnTime > 650) {
+                    spawnWave();
+                    lastSpawnTime = timestamp;
+                }
+
+                // Update active targets
+                for (const t of activeTargets) {
+                    t.x += t.vx;
+                    t.y += t.vy;
+                    t.vy += t.gravity;
+                    t.angle += t.vAngle;
+                    drawTargetBadge(t, 0);
+                }
+            } else {
+                // Still render frozen targets in background if modal/toast is open
+                for (const t of activeTargets) {
+                    if (!t.sliced) drawTargetBadge(t, 0);
+                }
+            }
+
+            // Update & draw sliced halves
+            for (let i = slicedHalves.length - 1; i >= 0; i--) {
+                const h = slicedHalves[i];
+                h.x += h.vx;
+                h.y += h.vy;
+                h.vy += h.gravity;
+                h.angle += h.vAngle;
+                h.alpha -= 0.015;
+                if (h.alpha <= 0 || h.y > canvas.height + 100) {
+                    slicedHalves.splice(i, 1);
+                } else {
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, h.alpha);
+                    drawTargetBadge(h, h.side);
+                    ctx.restore();
+                }
+            }
+
+            // Update & draw juice splatter particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.18;
+                p.alpha -= p.decay;
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, p.alpha);
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            // Update & draw floating score notifications
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y += ft.vy;
+                ft.alpha -= 0.018;
+                if (ft.alpha <= 0) {
+                    floatingTexts.splice(i, 1);
+                } else {
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, ft.alpha);
+                    const fontSize = canvas.width < 480 ? 20 : 28;
+                    ctx.font = `400 ${fontSize}px Arial, sans-serif`;
+                    ctx.fillStyle = ft.color;
+                    ctx.strokeStyle = "#1c0d06";
+                    ctx.lineWidth = 4;
+                    ctx.textAlign = "center";
+                    const clampedX = Math.max(80, Math.min(canvas.width - 80, ft.x));
+                    ctx.strokeText(ft.text, clampedX, ft.y);
+                    ctx.fillText(ft.text, clampedX, ft.y);
+                    ctx.restore();
+                }
+            }
+
+            // Draw katana swipe trail
+            drawBladeTrail();
+
+            ctx.restore();
+            requestAnimationFrame(animateLoop);
+        }
+
+        document.getElementById("btnStartGame").addEventListener("click", () => startGame("EXAM"));
+        document.getElementById("btnStartBonus").addEventListener("click", () => startGame("ENDLESS"));
+        document.getElementById("btnPlayAgain").addEventListener("click", () => startGame("EXAM"));
+        document.getElementById("btnPlayEndlessEnd").addEventListener("click", () => startGame("ENDLESS"));
+        document.getElementById("btnNextQuestion").addEventListener("click", advanceToNextQuestion);
+
+        // Mobile Start Screen Character Tab Switcher (A / B / C)
+        const tabButtons = document.querySelectorAll(".start-tab-btn");
+        const startCards = {
+            A: document.getElementById("startCardA"),
+            B: document.getElementById("startCardB"),
+            C: document.getElementById("startCardC")
+        };
+        tabButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const selected = btn.getAttribute("data-tab");
+                Object.keys(startCards).forEach(key => {
+                    if (key === selected) {
+                        startCards[key].classList.remove("hidden");
+                    } else {
+                        startCards[key].classList.add("hidden");
+                    }
+                });
+                tabButtons.forEach(b => {
+                    const isMatch = b.getAttribute("data-tab") === selected;
+                    b.classList.toggle("border-white", isMatch);
+                    b.classList.toggle("scale-105", isMatch);
+                    b.classList.toggle("opacity-75", !isMatch);
+                });
+            });
+        });
+
+        // Toggle Reading Texts Modal (Also triggered when tapping bottom character legend on mobile)
+        let previousStateBeforeModal = "PLAYING";
+        function toggleTextsModal() {
+            const modal = document.getElementById("textsModal");
+            if (modal.classList.contains("hidden")) {
+                previousStateBeforeModal = gameState;
+                if (gameState === "PLAYING") gameState = "PAUSED_MODAL";
+                modal.classList.remove("hidden");
+            } else {
+                modal.classList.add("hidden");
+                if (gameState === "PAUSED_MODAL") gameState = previousStateBeforeModal;
+            }
+        }
+        document.getElementById("btnToggleTexts").addEventListener("click", toggleTextsModal);
+        document.getElementById("footerCards").addEventListener("click", toggleTextsModal);
+
+        document.getElementById("btnCloseTexts").addEventListener("click", () => {
+            document.getElementById("textsModal").classList.add("hidden");
+            if (gameState === "PAUSED_MODAL") gameState = previousStateBeforeModal;
+        });
+
+        // Toggle Slow Motion for easier classroom / smartboard slicing
+        document.getElementById("btnSlowMo").addEventListener("click", () => {
+            slowMotion = !slowMotion;
+            document.getElementById("slowMoLabel").textContent = slowMotion ? "Slow-Mo" : "Normal";
+            if (audioInitialized && Tone.Transport) {
+                Tone.Transport.bpm.value = slowMotion ? 105 : 136;
+            }
+        });
+
+        // Toggle Bahasa Melayu Translation
+        document.getElementById("btnToggleTrans").addEventListener("click", () => {
+            showTranslation = !showTranslation;
+            document.getElementById("transLabel").textContent = showTranslation ? "BM" : "EN";
+            document.querySelectorAll(".bm-trans").forEach(el => {
+                el.classList.toggle("hidden", !showTranslation);
+            });
+        });
+
+        // Toggle Dojo Background Music
+        document.getElementById("btnMusic").addEventListener("click", async () => {
+            await initAudio();
+            musicEnabled = !musicEnabled;
+            document.getElementById("musicLabel").textContent = musicEnabled ? "Music: ON" : "Music: OFF";
+            const btn = document.getElementById("btnMusic");
+            btn.classList.toggle("opacity-60", !musicEnabled);
+            if (musicEnabled && (gameState === "PLAYING" || gameState === "PAUSED_TOAST")) {
+                startBackgroundMusic();
+            }
+        });
+
+        // Toggle Slash & SFX Sound
+        document.getElementById("btnSound").addEventListener("click", async e => {
+            await initAudio();
+            soundEnabled = !soundEnabled;
+            e.currentTarget.textContent = soundEnabled ? "🔊" : "🔇";
+        });
+
+        let previousStateBeforeSheetModal = "MENU";
+        function openSheetModal() {
+            const modal = document.getElementById("sheetModal");
+            previousStateBeforeSheetModal = gameState;
+            if (gameState === "PLAYING") gameState = "PAUSED_MODAL";
+            modal.classList.remove("hidden");
+        }
+        function closeSheetModal() {
+            document.getElementById("sheetModal").classList.add("hidden");
+            if (gameState === "PAUSED_MODAL") gameState = previousStateBeforeSheetModal;
+        }
+
+        document.getElementById("btnSheetSetup").addEventListener("click", openSheetModal);
+        document.getElementById("btnOpenSheetFromStart").addEventListener("click", openSheetModal);
+        document.getElementById("btnOpenSheetEnd").addEventListener("click", openSheetModal);
+        document.getElementById("btnCloseSheetModal").addEventListener("click", closeSheetModal);
+
+        // Save & Test Google Apps Script Web App URL
+        document.getElementById("btnSaveWebhook").addEventListener("click", async () => {
+            const input = document.getElementById("sheetWebhookInput");
+            const statusEl = document.getElementById("webhookSaveStatus");
+            const dotEl = document.getElementById("sheetStatusDot");
+            const url = input.value.trim();
+
+            if (!url) {
+                googleSheetWebhookUrl = "";
+                dotEl.className = "w-2 h-2 rounded-full bg-amber-300";
+                statusEl.textContent = "⚠️ URL cleared. Marks will be saved to the in-game Session Log (CSV exportable).";
+                return;
+            }
+
+            if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url)){statusEl.textContent="Please enter a valid Apps Script /exec URL.";return;}
+ googleSheetWebhookUrl = url;
+            dotEl.className = "w-2 h-2 rounded-full bg-emerald-400";
+            statusEl.textContent = "⏳ Sending test row to your Google Sheet...";
+
+            try {
+                await fetch(googleSheetWebhookUrl, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({
+                        eventType: "TEST_CONNECTION",
+                        studentName: "Test Teacher Connection",
+                        studentClass: "Setup Check",
+                        marks: 10,
+                        totalQuestions: 10,
+                        score: 1000,
+                        accuracy: 100,
+                        currentQuestion: "Connection Verified!",
+                        chosenAnswer: "A",
+                        isCorrect: true,
+                        details: "Google Sheet connected successfully!"
+                    })
+                });
+                statusEl.innerHTML = "📤 Test request sent. This connection method cannot confirm saving. Check your spreadsheet for the test row before using it with pupils.";
+            } catch (e) {
+                statusEl.textContent = "⚠️ Could not reach URL. Please verify your Google Apps Script Web App deployment settings.";
+            }
+        });
+
+        // Retry button on End Screen
+        document.getElementById("btnRetrySync").addEventListener("click", () => {
+            sendToGoogleSheet({ eventType: "FINAL_SCORE",retry:true });
+        });
+
+        // Copy Google Apps Script snippet using execCommand for iframe compatibility
+        document.getElementById("btnCopyAppsScript").addEventListener("click", e => {
+            const codeText = document.getElementById("appsScriptCodeBlock").innerText;
+            const tempArea = document.createElement("textarea");
+            tempArea.value = codeText;
+            document.body.appendChild(tempArea);
+            tempArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempArea);
+            const btn = e.currentTarget;
+            const orig = btn.textContent;
+            btn.textContent = "✅ Copied!";
+            setTimeout(() => { btn.textContent = orig; }, 2000);
+        });
+
+        // Download Session Marks as CSV (Opens directly in Google Sheets / Excel)
+        document.getElementById("btnDownloadCSV").addEventListener("click", () => {
+            const headers = ["Timestamp", "Pupil Name", "Class", "Marks", "Total Questions", "Score", "Accuracy (%)", "Question Breakdown"];
+            const rows = sessionResultsHistory.map(r => [
+                `"${r.timestamp}"`,
+                `"${(r.studentName || "").replace(/"/g, '""')}"`,
+                `"${(r.studentClass || "").replace(/"/g, '""')}"`,
+                r.marks,
+                r.totalQuestions,
+                r.score,
+                r.accuracy,
+                `"${(r.details || "").replace(/"/g, '""')}"`
+            ]);
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "sugar_ninja_pupil_marks.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        window.onload = function () {
+            resizeCanvas();
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(() => requestAnimationFrame(animateLoop));
+            } else {
+                requestAnimationFrame(animateLoop);
+            }
+        };
+    </script>
+</body>
+</html>
